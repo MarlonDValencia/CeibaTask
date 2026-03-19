@@ -1,0 +1,17 @@
+spring:
+  application:
+    name: btg-fondos
+
+  data:
+    mongodb:
+      uri: ${MONGODB_URI:mongodb://localhost:27017/btg_fondos}
+
+server:
+  port: 8080
+
+jwt:
+  secret: ${JWT_SECRET:c2VjdXJlLWtleS1mb3ItYnRnLXBhY3R1YWwtZm9uZG9zLWFwcGxpY2F0aW9uLTIwMjU=}
+  expiration: 1800000
+
+fund:
+  initial-balance: 500000

@@ -1,0 +1,431 @@
+{
+  "info": {
+    "name": "BTG Fondos API",
+    "description": "Colección completa para probar la API de gestión de fondos de inversión BTG Pactual",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:8080",
+      "type": "string"
+    },
+    {
+      "key": "token",
+      "value": "",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "Auth",
+      "item": [
+        {
+          "name": "Registrar cliente",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const response = pm.response.json();",
+                  "if (response.token) {",
+                  "    pm.collectionVariables.set('token', response.token);",
+                  "    console.log('Token guardado:', response.token);",
+                  "}",
+                  "pm.test('Status 201', () => pm.response.to.have.status(201));",
+                  "pm.test('Tiene token', () => pm.expect(response.token).to.be.a('string'));",
+                  "pm.test('Tiene clientId', () => pm.expect(response.clientId).to.be.a('string'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Juan Pérez\",\n  \"email\": \"juan@test.com\",\n  \"phone\": \"3001234567\",\n  \"password\": \"password123\",\n  \"notificationPreference\": \"EMAIL\"\n}"
+            },
+            "url": "{{baseUrl}}/api/auth/register",
+            "description": "Registra un nuevo cliente. El token JWT se guarda automáticamente en la variable de colección."
+          }
+        },
+        {
+          "name": "Registrar cliente (SMS)",
+          "request": {
+            "method": "POST",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"María López\",\n  \"email\": \"maria@test.com\",\n  \"phone\": \"3009876543\",\n  \"password\": \"password123\",\n  \"notificationPreference\": \"SMS\"\n}"
+            },
+            "url": "{{baseUrl}}/api/auth/register",
+            "description": "Registra un cliente con preferencia de notificación SMS."
+          }
+        },
+        {
+          "name": "Registrar cliente (email duplicado) - ERROR 400",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 400 por email duplicado', () => pm.response.to.have.status(400));",
+                  "pm.test('Mensaje de error correcto', () => {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response.message).to.include('email ya se encuentra registrado');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Otro Juan\",\n  \"email\": \"juan@test.com\",\n  \"phone\": \"3001234567\",\n  \"password\": \"password123\",\n  \"notificationPreference\": \"EMAIL\"\n}"
+            },
+            "url": "{{baseUrl}}/api/auth/register",
+            "description": "Intenta registrar con un email que ya existe. Espera error 400."
+          }
+        },
+        {
+          "name": "Login exitoso",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const response = pm.response.json();",
+                  "if (response.token) {",
+                  "    pm.collectionVariables.set('token', response.token);",
+                  "    console.log('Token actualizado');",
+                  "}",
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Tiene token JWT', () => pm.expect(response.token).to.be.a('string'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"juan@test.com\",\n  \"password\": \"password123\"\n}"
+            },
+            "url": "{{baseUrl}}/api/auth/login",
+            "description": "Login con credenciales válidas. Actualiza el token en la colección."
+          }
+        },
+        {
+          "name": "Login fallido - ERROR 401",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 401', () => pm.response.to.have.status(401));",
+                  "pm.test('Mensaje de credenciales inválidas', () => {",
+                  "    const response = pm.response.json();",
+                  "    pm.expect(response.message).to.include('inválidas');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"juan@test.com\",\n  \"password\": \"wrong-password\"\n}"
+            },
+            "url": "{{baseUrl}}/api/auth/login",
+            "description": "Login con contraseña incorrecta. Espera error 401."
+          }
+        },
+        {
+          "name": "Acceso sin token - ERROR 403",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 403 sin token', () => pm.response.to.have.status(403));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/funds",
+            "description": "Intenta acceder a un endpoint protegido sin enviar token. Espera 403."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Fondos",
+      "item": [
+        {
+          "name": "Listar todos los fondos",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Retorna 5 fondos', () => {",
+                  "    const funds = pm.response.json();",
+                  "    pm.expect(funds).to.have.lengthOf(5);",
+                  "});",
+                  "pm.test('Fondos tienen estructura correcta', () => {",
+                  "    const funds = pm.response.json();",
+                  "    funds.forEach(f => {",
+                  "        pm.expect(f).to.have.all.keys('id', 'name', 'minimumAmount', 'category');",
+                  "    });",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [{"key": "Authorization", "value": "Bearer {{token}}"}],
+            "url": "{{baseUrl}}/api/funds",
+            "description": "Lista los 5 fondos disponibles con su monto mínimo y categoría."
+          }
+        },
+        {
+          "name": "Suscribir a fondo 1 (RECAUDADORA $75k)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "const r = pm.response.json();",
+                  "pm.test('Tipo APERTURA', () => pm.expect(r.type).to.equal('APERTURA'));",
+                  "pm.test('Tiene transactionId', () => pm.expect(r.transactionId).to.be.a('string'));",
+                  "pm.test('Balance reducido en $75.000', () => pm.expect(r.newBalance).to.equal(425000));",
+                  "pm.test('Monto correcto', () => pm.expect(r.amount).to.equal(75000));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{"key": "Authorization", "value": "Bearer {{token}}"}],
+            "url": "{{baseUrl}}/api/funds/1/subscribe",
+            "description": "Suscripción al fondo RECAUDADORA ($75.000). Balance: $500k → $425k."
+          }
+        },
+        {
+          "name": "Suscribir a fondo 1 (ya suscrito) - ERROR 409",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 409 Conflict', () => pm.response.to.have.status(409));",
+                  "pm.test('Mensaje de ya suscrito', () => {",
+                  "    const r = pm.response.json();",
+                  "    pm.expect(r.message).to.include('Ya se encuentra suscrito');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{"key": "Authorization", "value": "Bearer {{token}}"}],
+            "url": "{{baseUrl}}/api/funds/1/subscribe",
+            "description": "Intenta suscribirse al fondo 1 de nuevo. Espera error 409 Conflict."
+          }
+        },
+        {
+          "name": "Suscribir a fondo 2 (ECOPETROL $125k)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "const r = pm.response.json();",
+                  "pm.test('Balance reducido en $125.000', () => pm.expect(r.newBalance).to.equal(300000));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{"key": "Authorization", "value": "Bearer {{token}}"}],
+            "url": "{{baseUrl}}/api/funds/2/subscribe",
+            "description": "Suscripción al fondo ECOPETROL ($125.000). Balance: $425k → $300k."
+          }
+        },
+        {
+          "name": "Suscribir a fondo 4 (FDO-ACCIONES $250k) - ERROR saldo insuficiente",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 400 saldo insuficiente', () => pm.response.to.have.status(400));",
+                  "pm.test('Mensaje exacto de saldo insuficiente', () => {",
+                  "    const r = pm.response.json();",
+                  "    pm.expect(r.message).to.equal('No tiene saldo disponible para vincularse al fondo FDO-ACCIONES');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{"key": "Authorization", "value": "Bearer {{token}}"}],
+            "url": "{{baseUrl}}/api/funds/4/subscribe",
+            "description": "Intenta suscribirse al fondo FDO-ACCIONES ($250k) con balance insuficiente ($300k disponible pero ya en otras). Espera error 400 con mensaje específico."
+          }
+        },
+        {
+          "name": "Suscribir a fondo inexistente - ERROR 404",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 404 Not Found', () => pm.response.to.have.status(404));",
+                  "pm.test('Mensaje fondo no encontrado', () => {",
+                  "    const r = pm.response.json();",
+                  "    pm.expect(r.message).to.include('Fondo no encontrado');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{"key": "Authorization", "value": "Bearer {{token}}"}],
+            "url": "{{baseUrl}}/api/funds/99/subscribe",
+            "description": "Intenta suscribirse a un fondo que no existe. Espera error 404."
+          }
+        },
+        {
+          "name": "Cancelar suscripción fondo 1",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "const r = pm.response.json();",
+                  "pm.test('Tipo CANCELACION', () => pm.expect(r.type).to.equal('CANCELACION'));",
+                  "pm.test('Balance restaurado en $75.000', () => pm.expect(r.newBalance).to.equal(375000));",
+                  "pm.test('Monto devuelto correcto', () => pm.expect(r.amount).to.equal(75000));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{"key": "Authorization", "value": "Bearer {{token}}"}],
+            "url": "{{baseUrl}}/api/funds/1/unsubscribe",
+            "description": "Cancela suscripción al fondo 1. El monto se devuelve al balance. $300k → $375k."
+          }
+        },
+        {
+          "name": "Cancelar fondo 1 (sin suscripción) - ERROR 400",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 400', () => pm.response.to.have.status(400));",
+                  "pm.test('Mensaje no suscrito', () => {",
+                  "    const r = pm.response.json();",
+                  "    pm.expect(r.message).to.include('No se encuentra suscrito');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{"key": "Authorization", "value": "Bearer {{token}}"}],
+            "url": "{{baseUrl}}/api/funds/1/unsubscribe",
+            "description": "Intenta cancelar un fondo al que no está suscrito. Espera error 400."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Transacciones",
+      "item": [
+        {
+          "name": "Ver historial de transacciones",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Es un array', () => pm.expect(pm.response.json()).to.be.an('array'));",
+                  "pm.test('Transacciones tienen estructura correcta', () => {",
+                  "    const txs = pm.response.json();",
+                  "    if (txs.length > 0) {",
+                  "        pm.expect(txs[0]).to.have.all.keys('id', 'fundId', 'fundName', 'type', 'amount', 'timestamp');",
+                  "    }",
+                  "});",
+                  "pm.test('Ordenadas por fecha descendente', () => {",
+                  "    const txs = pm.response.json();",
+                  "    for (let i = 0; i < txs.length - 1; i++) {",
+                  "        pm.expect(txs[i].timestamp >= txs[i+1].timestamp).to.be.true;",
+                  "    }",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [{"key": "Authorization", "value": "Bearer {{token}}"}],
+            "url": "{{baseUrl}}/api/transactions",
+            "description": "Retorna el historial de transacciones del cliente autenticado, ordenado por fecha descendente."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Cliente",
+      "item": [
+        {
+          "name": "Ver perfil y balance",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "const r = pm.response.json();",
+                  "pm.test('Tiene balance', () => pm.expect(r.balance).to.be.a('number'));",
+                  "pm.test('Tiene fondos suscritos', () => pm.expect(r.subscribedFunds).to.be.an('array'));",
+                  "pm.test('No expone password', () => pm.expect(r).to.not.have.property('password'));",
+                  "console.log('Balance actual: $' + r.balance);",
+                  "console.log('Fondos suscritos:', r.subscribedFunds);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [{"key": "Authorization", "value": "Bearer {{token}}"}],
+            "url": "{{baseUrl}}/api/clients/me",
+            "description": "Retorna el perfil completo del cliente autenticado: balance, fondos activos, preferencia de notificación."
+          }
+        }
+      ]
+    }
+  ]
+}

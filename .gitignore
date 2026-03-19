@@ -1,0 +1,16 @@
+target/
+*.class
+*.jar
+*.war
+
+.env
+*.env
+
+.idea/
+*.iml
+.vscode/
+
+*.log
+/tmp/
+
+.mvn/wrapper/maven-wrapper.jar
