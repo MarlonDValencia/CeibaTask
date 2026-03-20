@@ -10,7 +10,7 @@ server:
   port: 8080
 
 jwt:
-  secret: ${JWT_SECRET:c2VjdXJlLWtleS1mb3ItYnRnLXBhY3R1YWwtZm9uZG9zLWFwcGxpY2F0aW9uLTIwMjU=}
+  secret: ${JWT_SECRET}
   expiration: 1800000
 
 fund:
