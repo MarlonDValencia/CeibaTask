@@ -33,9 +33,14 @@ export JWT_SECRET="base64"
 ./mvnw test
 ```
 
+## API en produccion
+
+- **Base URL:** http://18.222.189.172:8080
+- **Swagger UI:** http://18.222.189.172:8080/swagger-ui/index.html
+
 ## Endpoints
 
-| Método | Endpoint | Auth | Descripción |
+| Metodo | Endpoint | Auth | Descripcion |
 |--------|----------|------|-------------|
 | POST | `/api/auth/register` | No | Registrar cliente |
 | POST | `/api/auth/login` | No | Login, retorna JWT |
@@ -72,26 +77,19 @@ La consulta SQL se encuentra en `sql/consulta.sql`.
 
 ## Infraestructura AWS
 
-Despliegue en EC2 (Free Tier) con MongoDB Atlas:
+Despliegue en EC2 (Free Tier) con MongoDB Atlas. Template de CloudFormation en `infrastructure/template.yml`.
 
-- **EC2 t2.micro** — instancia gratuita corriendo la app con Java 17
+- **EC2 t3.micro** — instancia free tier corriendo la app con Java 17
 - **MongoDB Atlas** — cluster gratuito (M0) en la nube
-- **Security Group** — puerto 8080 abierto para tráfico HTTP
+- **Security Group** — puertos 22 (SSH) y 8080 (HTTP) abiertos
 
-### Despliegue manual
+## CI/CD
 
-```bash
-# 1. Compilar el JAR
-./mvnw clean package -DskipTests
+Pipeline automatizado con GitHub Actions (`.github/workflows/deploy.yml`):
 
-# 2. Copiar el JAR a la instancia EC2
-scp -i key.pem target/fondos-0.0.1-SNAPSHOT.jar ec2-user@<IP>:~/app.jar
+1. **Tests** — ejecuta `./mvnw test`
+2. **Validacion CloudFormation** — valida `infrastructure/template.yml`
+3. **Build** — genera el JAR con `./mvnw clean package`
+4. **Deploy** — copia el JAR al EC2 via SCP y reinicia la app
 
-# 3. Conectar por SSH y ejecutar
-ssh -i key.pem ec2-user@<IP>
-export MONGODB_URI="mongodb+srv://..."
-export JWT_SECRET="..."
-nohup java -jar app.jar &
-```
-
-La app queda disponible en `http://<IP-publica>:8080`.
+El pipeline se ejecuta automaticamente en cada push a `main`.
