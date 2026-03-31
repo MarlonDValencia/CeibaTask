@@ -33,7 +33,7 @@ export JWT_SECRET="base64"
 ./mvnw test
 ```
 
-## API en produccion
+## API en produccion (INSTANCIA PAUSADA)
 
 - **Base URL:** http://18.222.189.172:8080
 - **Swagger UI:** http://18.222.189.172:8080/swagger-ui/index.html
